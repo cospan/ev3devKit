@@ -24,6 +24,7 @@
 using Grx;
 
 namespace Ev3devKit.Ui {
+
     /**
      * Represents a screen that UI elements are displayed on.
      *
@@ -35,7 +36,9 @@ namespace Ev3devKit.Ui {
 
         protected Queue<Window> window_stack;
         Queue<uint?> key_queue;
+        Queue<Grx.TouchEvent?> touch_queue;
         Context context;
+
 
         /**
          * Hack to prevent drawing during console switching.
@@ -139,6 +142,7 @@ namespace Ev3devKit.Ui {
         construct {
             window_stack = new Queue<Window> ();
             key_queue = new Queue<uint?> ();
+            touch_queue = new Queue<Grx.TouchEvent?> ();
             status_bar = new StatusBar () {
                 visible = false
             };
@@ -186,6 +190,9 @@ namespace Ev3devKit.Ui {
         public void queue_key_code (uint key_code) {
             key_queue.push_tail (key_code);
         }
+        public void queue_touch_event(Grx.TouchEvent evnt) {
+            touch_queue.push_tail(evnt);
+        }
 
         /**
          * Refresh the screen.
@@ -197,22 +204,39 @@ namespace Ev3devKit.Ui {
             get_screen_context ().bit_blt (0, 0, context, 0, 0, get_screen_width () - 1, get_screen_height () - 1);
         }
 
+
         void handle_input () {
             var key_code = key_queue.pop_head ();
-            if (key_code == null || top_window == null)
+            var touch_event = touch_queue.pop_head();
+
+
+            if (((key_code == null) && (touch_event == null)) || (top_window == null)){
                 return;
-            // get the currently focused widget or top_window if none
-            var focus_widget = top_window.get_focused_child () ?? top_window;
-            // Trigger the key press event for the focused widget.
-            // If it is not handled, pass it to the parent.
-            focus_widget.do_recursive_parent ((widget) => {
-                // key press event may release all references to widget, so this
-                // gets a reference before calling key_pressed ()
-                var result = widget;
-                if (widget.key_pressed (key_code))
-                    return result;
+            }
+            if (touch_event != null){
+              var focus_widget = top_window.get_focused_child () ?? top_window;
+              focus_widget.do_recursive_parent((widget) => {
+                if (widget.is_widget_at_pos(touch_event.x, touch_event.y)){
+                  critical ("Touch %s widget: Type: %d", focus_widget.get_type().name (), (int) touch_event.type);
+                  focus_widget.touch_ev(touch_event);
+                }
                 return null;
-            });
+              });
+            }
+            if (key_code != null) {
+              // get the currently focused widget or top_window if none
+              var focus_widget = top_window.get_focused_child () ?? top_window;
+              // Trigger the key press event for the focused widget.
+              // If it is not handled, pass it to the parent.
+              focus_widget.do_recursive_parent ((widget) => {
+                  // key press event may release all references to widget, so this
+                  // gets a reference before calling key_pressed ()
+                  var result = widget;
+                  if (widget.key_pressed (key_code))
+                      return result;
+                  return null;
+              });
+            }
         }
 
         /**

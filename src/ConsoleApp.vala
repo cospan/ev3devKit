@@ -81,6 +81,14 @@ namespace Ev3devKit {
                 Ui.Screen.active_screen.queue_key_code (event.key.keysym);
                 return true;
             }
+            if ((event.type == Grx.EventType.TOUCH_DOWN)      ||
+                (event.type == Grx.EventType.TOUCH_UP)        ||
+                (event.type == Grx.EventType.TOUCH_CANCEL)    ||
+                (event.type == Grx.EventType.TOUCH_MOTION)){
+                debug ("Touch at: %d, %d\n", event.touch.x, event.touch.y);
+                Ui.Screen.get_active_screen().queue_touch_event (event.touch);
+                return true;
+            }
             return false;
         }
     }

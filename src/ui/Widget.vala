@@ -725,6 +725,24 @@ namespace Ev3devKit.Ui {
             });
         }
 
+        public Widget? get_child_at_pos(int x, int y){
+          return do_recursive_children((widget) => {
+            if ((widget.bounds.x1 < x) && (x < widget.bounds.x2) &&
+                (widget.bounds.y1 < y) && (y < widget.bounds.y2)){
+              debug ("Found %s widget", widget.get_type().name ());
+              widget.focus();
+              return widget;
+            }
+            return null;
+          });
+        }
+        public bool is_widget_at_pos(int x, int y) {
+          if ((this.bounds.x1 < x) && (x < this.bounds.x2) &&
+              (this.bounds.y1 < y) && (y < this.bounds.y2))
+            return true;
+          return false;
+        }
+
         /* tree traversal functions */
 
         /**
@@ -888,6 +906,24 @@ namespace Ev3devKit.Ui {
         }
 
         /* input handling */
+
+        /**
+         * Emitted when a touch ev is detected.
+         *
+         * This event is propitiated to all child widgets until a signal handler
+         * returns ``true`` to indicate that the key has been handled.
+         *
+         * Due to a shortcoming in vala, you currently also have to call
+         * {{{
+         * Signal.stop_emission_by_name (this, "touch-ev");
+         * }}}
+         * in addition to returning ``true``.
+         */
+        public virtual signal bool touch_ev (Grx.TouchEvent te) {
+          critical("Final Level as Touch Event\n");
+          Signal.stop_emission_by_name (this, "touch-ev");
+          return true;
+        }
 
         /**
          * Emitted when a key is pressed.

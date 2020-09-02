@@ -95,6 +95,17 @@ namespace Ev3devKit.Ui {
             }
         }
 
+        internal override bool touch_ev (Grx.TouchEvent te) {
+          //if (te.type == TOUCH_UP){
+          if (te.type == TOUCH_DOWN){
+            debug("Button: @ %st", this.get_type().name ());
+            pressed ();
+            Signal.stop_emission_by_name (this, "touch-ev");
+            return true;
+          }
+          return false;
+        }
+
         /**
          * Default handler for the key_pressed signal.
          */
